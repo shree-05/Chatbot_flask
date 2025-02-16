@@ -830,7 +830,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Initialize Firebase
-cred = credentials.Certificate(FIREBASE_CREDENTIALS)
+cred = credentials.Certificate('chatbotdata-6447c-firebase-adminsdk-fbsvc-8d0150ed35.json')
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
