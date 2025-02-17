@@ -808,20 +808,21 @@ import os
 import openai
 import uuid
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials, firestore ,initialize_app
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from datetime import datetime
 import pytz
+import json
 
 # Load environment variables
 load_dotenv()
 API_KEY = os.getenv("OPENAI_API_KEY")
-FIREBASE_CREDENTIALS = os.getenv("FIREBASE_CREDENTIALS")
+FIREBASE_CREDENTIALS_PATH = os.getenv("FIREBASE_CREDENTIALS_PATH")
 
-if not API_KEY or not FIREBASE_CREDENTIALS:
-    raise ValueError("Missing required environment variables")
+if not API_KEY or not FIREBASE_CREDENTIALS_PATH:
+    raise ValueError("Missing required environment variables: OPENAI_API_KEY or FIREBASE_CREDENTIALS_PATH")
 
 openai.api_key = API_KEY
 
@@ -830,8 +831,8 @@ app = Flask(__name__)
 CORS(app)
 
 # Initialize Firebase
-cred = credentials.Certificate('chatbotdata-6447c-firebase-adminsdk-fbsvc-8d0150ed35.json')
-firebase_admin.initialize_app(cred)
+cred = credentials.Certificate(os.getenv("FIREBASE_CREDENTIALS_PATH"))
+initialize_app(cred)
 db = firestore.client()
 
 # Time Management
@@ -872,8 +873,9 @@ Your Responsibilities:
    - Example: "I'm sorry you're feeling this way. It might help to talk to a trusted person or professional."  
 
  **Remember:** You are a supportive companion, not a replacement for professional therapy.
- also give all the responses in Marathi language
- when you are asked who are you should ans " "Hello! I am your personal mental health assistant "Manodarpan", here to support and guide you. I can help you track your mental well-being, assess your mood, suggest self-care tips, and connect you with professionals if needed. Feel free to share how you're feeling, and I'll do my best to assist you!" 
+Also give all the responses in Marathi language.
+When you are asked "Who are you?", you should respond:
+"Hello! I am your personal mental health assistant 'Manodarpan', here to support and guide you. I can help you track your mental well-being, assess your mood, suggest self-care tips, and connect you with professionals if needed. Feel free to share how you're feeling, and I'll do my best to assist you!"
 """
 
 # OpenAI Chat Function
@@ -933,6 +935,9 @@ def chat():
     session_id = data.get('session_id') or str(uuid.uuid4())
     user_message = data.get('message')
 
+    if not user_message:
+        return jsonify({"error": "Message is required"}), 400
+
     # Store User Message in user_sessions
     save_user_session(session_id, user_message)
 
@@ -964,4 +969,4 @@ def get_chat_history():
     return jsonify({"history": history})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
